@@ -1,3 +1,4 @@
+const morgan = require("morgan");
 const express = require("express");
 const app = express();
 
@@ -25,6 +26,9 @@ let persons = [
 ];
 
 app.use(express.json());
+morgan.token("body", (req, res) => JSON.stringify(req.body));
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'));
+
 
 app.get("/", (request, response) => {
   response.send("<h1>Back-End Phonebook exercise</h1/");
@@ -77,13 +81,12 @@ app.post("/api/persons", (request, response) => {
 
   if (!name || !number) {
     return response.status(400).json({
-        error: 'name and number must be specified'
-    })
-  } else if (persons.find(p=> p.name === name)) {
+      error: "name and number must be specified",
+    });
+  } else if (persons.find((p) => p.name === name)) {
     return response.status(400).json({
-        error: 'name must be unique'
-    })
-    
+      error: "name must be unique",
+    });
   }
 
   const person = {
@@ -93,7 +96,7 @@ app.post("/api/persons", (request, response) => {
   };
 
   persons = persons.concat(person);
-  console.log("person added", person);
+  console.log(request.body)
   response.json(person);
 });
 
