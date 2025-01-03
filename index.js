@@ -2,32 +2,18 @@ const morgan = require("morgan");
 const express = require("express");
 const cors = require("cors");
 const app = express();
+require("dotenv").config();
 
-app.use(express.static('dist'))
+const Person = require("./models/person");
+
+app.use(express.static("dist"));
 app.use(cors());
 
-let persons = [
-  {
-    id: "1",
-    name: "Arto Hellas",
-    number: "040-123456",
-  },
-  {
-    id: "2",
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-  },
-  {
-    id: "3",
-    name: "Dan Abramov",
-    number: "12-43-234345",
-  },
-  {
-    id: "4",
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-  },
-];
+let persons = [];
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
 
 app.use(express.json());
 morgan.token("body", (req, res) => JSON.stringify(req.body));
@@ -40,27 +26,27 @@ app.get("/", (request, response) => {
 });
 
 app.get("/api/persons", (request, response) => {
-  response.json(persons);
+  Person.find({}).then((persons) => {
+    response.json(persons);
+  });
 });
 
 app.get("/info", (request, response) => {
-  console.log(request.headers);
-  const totalPersons = persons.length;
-  const timestamp = new Date().toString();
-  console.log(`total: ${totalPersons} \n timestamp: ${timestamp}`);
-  response.send(`Phonebook has info for ${totalPersons} people 
+  Person.find({}).then((persons) => {
+    const totalPersons = persons.length;
+    const timestamp = new Date().toString();
+
+    console.log(`total: ${totalPersons} \n timestamp: ${timestamp}`);
+    response.send(`Phonebook has info for ${totalPersons} people 
                     <br>
                     ${timestamp}`);
+  });
 });
 
 app.get("/api/persons/:id", (request, response) => {
-  const id = request.params.id;
-  const person = persons.find((person) => person.id === id);
-  if (person) {
-    response.json(person);
-  } else {
-    response.status(404).end();
-  }
+  Person.findById(request.params.id).then( person => {
+    response.json(person)
+  })
 });
 
 app.delete("/api/persons/:id", (request, response) => {
@@ -88,22 +74,25 @@ app.post("/api/persons", (request, response) => {
     return response.status(400).json({
       error: "name and number must be specified",
     });
-  } else if (persons.find((p) => p.name === name)) {
-    return response.status(400).json({
-      error: "name must be unique",
-    });
   }
+  // } else if (persons.find((p) => p.name === name)) {
+  //   return response.status(400).json({
+  //     error: "name must be unique",
+  //   });
+  // }
 
-  const person = {
-    id: generateId(),
+  const person = new Person ({
     name: name,
     number: number,
-  };
+  })
 
-  persons = persons.concat(person);
-  console.log(request.body);
-  response.json(person);
+  person.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
+  
 });
+
+app.use(unknownEndpoint);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
