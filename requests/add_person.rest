@@ -4,6 +4,6 @@ Content-Type: application/json
 Content-Length: 62
 
 {
-    "name": "Illia Boiko",
+    "name": "Il",
     "number": "095193492034"
 }
